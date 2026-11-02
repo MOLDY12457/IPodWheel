@@ -1,0 +1,9 @@
+Package: com.tanguytar.ipodwheel
+Name: IPodWheel
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: Interface iPod classic avec click wheel (+ option ecran d'accueil)
+Maintainer: Tanguytar
+Author: Tanguytar
+Section: Applications
+Depends: firmware (>= 6.0)

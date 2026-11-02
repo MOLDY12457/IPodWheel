@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=320, initial-scale=1, user-scalable=no">
+<title>iPod</title>
+<style>
+  * { -webkit-box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; -webkit-touch-callout: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Helvetica Neue", Helvetica, sans-serif; touch-action: none; }
+  body { background: -webkit-linear-gradient(left, #b3b5b8, #e8e9ea 28%, #d6d8da 55%, #f0f0f1 76%, #b0b2b5); }
+
+  #screen { position: absolute; left: 14px; top: 14px; width: 292px; height: 262px; background: #0b0b0c;
+            padding: 6px; -webkit-border-radius: 12px; -webkit-box-shadow: 0 1px 0 #fff, inset 0 0 6px #000; }
+  #lcd { position: relative; width: 100%; height: 100%; background: #fff; -webkit-border-radius: 6px; overflow: hidden;
+         -webkit-transform: translateZ(0); }
+  #bar { height: 28px; line-height: 28px; text-align: center; font-size: 15px; font-weight: bold; color: #222; position: relative;
+         background: -webkit-linear-gradient(top, #fafafa, #bfc3c8); border-bottom: 1px solid #9aa0a6; }
+  #title { display: block; margin: 0 72px 0 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pst { position: absolute; left: 8px; top: 0; font-size: 11px; color: #1b66cc; }
+  #lockbadge { display: none; position: absolute; left: 24px; top: 0; font-size: 13px; }
+
+  /* batterie */
+  #batt { position: absolute; right: 12px; top: 7px; width: 28px; height: 13px; border: 1px solid #444; -webkit-border-radius: 3px;
+          background: #fff; overflow: hidden; }
+  #battfill { height: 100%; width: 0%; background: -webkit-linear-gradient(top, #9be07a, #3f9a2a); }
+  #battfill.low { background: -webkit-linear-gradient(top, #f08a8a, #c62828); }
+  #battfill.chg { -webkit-animation: chg 1.4s ease-in-out infinite; }
+  @-webkit-keyframes chg { 0% { opacity: .45; } 50% { opacity: 1; } 100% { opacity: .45; } }
+  #battnub { position: absolute; right: 8px; top: 10px; width: 3px; height: 7px; background: #444; -webkit-border-radius: 0 2px 2px 0; }
+  #bolt { display: none; position: absolute; left: 0; top: 0; width: 100%; text-align: center; font-size: 10px; line-height: 13px; }
+  #battpct { position: absolute; right: 46px; top: 0; font-size: 10px; font-weight: normal; color: #444; line-height: 28px; }
+
+  #list { position: relative; height: 222px; overflow: hidden; }
+
+  /* lignes de liste (7 lignes creees une seule fois, puis mises a jour) */
+  .row { height: 31.7px; line-height: 31px; padding: 0 10px; font-size: 18px; color: #111; border-bottom: 1px solid #ececec;
+         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .sub { font-size: 12px; color: #8a8a8a; margin-left: 6px; }
+  .row .arr { float: right; color: #9a9a9a; font-size: 13px; margin-left: 6px; }
+  .row.sel { color: #fff; background: -webkit-linear-gradient(top, #5aa8f2, #1b66cc); border-bottom-color: #1b66cc; }
+  .row.sel .arr, .row.sel .sub { color: #e6f0ff; }
+
+  .txt { padding: 40px 16px; font-size: 16px; color: #333; text-align: center; line-height: 22px; }
+
+  /* lecture en cours / radio */
+  .np { position: relative; height: 222px; }
+  .art { position: absolute; left: 10px; top: 10px; width: 90px; height: 90px; overflow: hidden; text-align: center;
+         line-height: 90px; font-size: 42px; color: #9aa3ab; -webkit-border-radius: 3px;
+         background: -webkit-linear-gradient(top, #eef0f2, #c9cdd2); -webkit-box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+  .art img { position: absolute; left: 0; top: 0; width: 90px; height: 90px; display: none; }
+  .info { position: absolute; left: 110px; right: 8px; top: 12px; }
+  .npt { font-size: 17px; font-weight: bold; color: #111; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .npa { font-size: 14px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 19px; }
+  .npi { font-size: 12px; color: #888; margin-top: 6px; }
+  .bot { position: absolute; left: 12px; right: 12px; top: 114px; }
+  .prog { height: 9px; background: #d9dde1; -webkit-border-radius: 5px; overflow: hidden; }
+  .prog div { height: 100%; width: 0; background: -webkit-linear-gradient(top, #5aa8f2, #1b66cc); }
+  .prog.scrub div { background: -webkit-linear-gradient(top, #ffb74d, #ef6c00); }
+  .tm { height: 16px; font-size: 12px; color: #555; margin-top: 3px; }
+  .tm span:first-child { float: left; } .tm span:last-child { float: right; }
+  .md { margin-top: 14px; height: 20px; line-height: 20px; font-size: 13px; color: #555; }
+  .md .ml { display: inline-block; width: 78px; }
+  .md .prog { display: inline-block; vertical-align: middle; width: 170px; }
+  .md .mv { font-weight: bold; color: #1b66cc; }
+  .rst { font-size: 15px; color: #1b66cc; margin-top: 10px; }
+  .rst.err { color: #c62828; }
+
+  /* horloge, chrono, heure */
+  .clk { padding-top: 46px; text-align: center; }
+  .big { font-size: 46px; font-weight: 200; color: #111; }
+  .dt { font-size: 15px; color: #555; margin-top: 8px; }
+  .hint { position: absolute; left: 0; right: 0; bottom: 8px; text-align: center; font-size: 11px; color: #888; }
+  .sw { position: relative; height: 222px; padding-top: 24px; text-align: center; }
+  .laps { margin: 10px 40px 0; font-size: 13px; color: #555; text-align: left; }
+  .laps div { height: 18px; } .laps b { float: right; font-weight: normal; }
+  .te { position: relative; height: 222px; padding-top: 52px; text-align: center; font-size: 54px; font-weight: 200; color: #111; }
+  .te span { padding: 0 6px; -webkit-border-radius: 6px; }
+  .te span.on { color: #fff; background: -webkit-linear-gradient(top, #5aa8f2, #1b66cc); }
+
+  /* a propos */
+  .ab { padding: 8px 14px; }
+  .ab .h { font-size: 19px; font-weight: bold; text-align: center; margin-bottom: 4px; color: #111; }
+  .kv { height: 22px; line-height: 22px; font-size: 14px; color: #222; border-bottom: 1px solid #eee; }
+  .kv b { float: right; font-weight: normal; color: #666; }
+
+  canvas { display: block; }
+
+  /* surimpressions */
+  #lockov { display: none; position: absolute; left: 95px; top: 80px; width: 90px; height: 90px; line-height: 90px;
+            text-align: center; font-size: 46px; color: #fff; background: rgba(20,20,20,0.78);
+            -webkit-border-radius: 14px; z-index: 5; }
+  #letter { display: none; position: absolute; left: 96px; top: 81px; width: 88px; height: 88px; line-height: 88px;
+            text-align: center; font-size: 56px; font-weight: bold; color: #fff; background: rgba(20,20,20,0.72);
+            -webkit-border-radius: 12px; z-index: 6; }
+  #toast { display: none; position: absolute; left: 16px; right: 16px; bottom: 12px; padding: 8px 10px; text-align: center;
+           font-size: 13px; line-height: 17px; color: #fff; background: rgba(20,20,20,0.85); -webkit-border-radius: 10px; z-index: 7; }
+  #dim { display: none; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #000; opacity: .9; z-index: 20; }
+
+  #wheel { position: absolute; left: 72px; top: 292px; width: 176px; height: 176px; -webkit-border-radius: 88px;
+           background: -webkit-radial-gradient(center, #fbfbfb 50%, #cfd1d3 100%); border: 1px solid #9fa2a5;
+           -webkit-box-shadow: 0 1px 0 #fff; }
+  #wheel span { position: absolute; font-size: 12px; font-weight: bold; color: #7c7f82; }
+  #menu { top: 10px; left: 0; width: 100%; text-align: center; }
+  #prev { left: 12px; top: 76px; }
+  #next { right: 12px; top: 76px; }
+  #play { bottom: 10px; left: 0; width: 100%; text-align: center; }
+  #center { position: absolute; left: 53px; top: 53px; width: 70px; height: 70px; -webkit-border-radius: 35px;
+            background: -webkit-radial-gradient(center, #f4f4f4, #cbcdcf); border: 1px solid #9fa2a5; }
+  #dbg { display: none; position: absolute; left: 4px; bottom: 2px; font: 9px monospace; color: #444; }
+
+  /* theme sombre */
+  body.dark { background: -webkit-linear-gradient(left, #0c0c0d, #2a2b2d 28%, #1b1c1e 55%, #2e2f31 76%, #09090a); }
+  body.dark #screen { background: #000; -webkit-box-shadow: 0 1px 0 #4a4b4d, inset 0 0 6px #000; }
+  body.dark #lcd { background: #000; }
+  body.dark #bar { color: #eee; background: -webkit-linear-gradient(top, #3d3e40, #17181a); border-bottom-color: #000; }
+  body.dark #pst { color: #5aa8f2; }
+  body.dark #batt { background: #222; border-color: #aaa; }
+  body.dark #battnub { background: #aaa; }
+  body.dark #battpct { color: #bbb; }
+  body.dark .row { color: #f2f2f2; border-bottom-color: #1c1c1e; }
+  body.dark .row .sub, body.dark .row .arr { color: #8e8e93; }
+  body.dark .row.sel .arr, body.dark .row.sel .sub { color: #e6f0ff; }
+  body.dark .txt { color: #ddd; }
+  body.dark .npt, body.dark .big, body.dark .te, body.dark .ab .h { color: #fff; }
+  body.dark .npa, body.dark .tm, body.dark .md, body.dark .dt, body.dark .laps { color: #aaa; }
+  body.dark .art { color: #555; background: -webkit-linear-gradient(top, #2c2c2e, #151516); }
+  body.dark .prog { background: #2c2c2e; }
+  body.dark .kv { color: #eee; border-bottom-color: #1c1c1e; }
+  body.dark .kv b { color: #999; }
+  body.dark #wheel { background: -webkit-radial-gradient(center, #2c2c2e 50%, #101011 100%); border-color: #000; -webkit-box-shadow: 0 1px 0 #555; }
+  body.dark #wheel span { color: #b5b7ba; }
+  body.dark #center { background: -webkit-radial-gradient(center, #3c3c3e, #131314); border-color: #000; }
+  body.dark #dbg { color: #aaa; }
+</style>
+</head>
+<body>
+<div id="screen"><div id="lcd">
+  <div id="bar">
+    <span id="pst"></span><span id="lockbadge">&#x1F512;</span><span id="title">iPod</span>
+    <span id="battpct"></span><div id="batt"><div id="battfill"></div><span id="bolt">&#9889;</span></div><div id="battnub"></div>
+  </div>
+  <div id="list"></div>
+  <div id="lockov">&#x1F512;</div>
+  <div id="letter"></div>
+  <div id="toast"></div>
+</div></div>
+<div id="wheel">
+  <span id="menu">MENU</span><span id="prev">&#9664;&#9664;</span><span id="next">&#9654;&#9654;</span><span id="play">&#9654;&#10074;&#10074;</span>
+  <div id="center"></div>
+</div>
+<div id="dbg"></div>
+<div id="dim"></div>
+
+<script>
+(function () {
+  var VERSION = '0.1.0';
+  var HOLD_ENABLED = true;    // false = ignore l'interrupteur silencieux
+  var VISIBLE = 7;
+
+  function $(id) { return document.getElementById(id); }
+  var listEl = $('list'), titleEl = $('title'), wheel = $('wheel'), lockov = $('lockov'), badge = $('lockbadge'),
+      pstEl = $('pst'), dbgEl = $('dbg'), letterEl = $('letter'), toastEl = $('toast'), dimEl = $('dim');
+
+  function now() { return +new Date(); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function enc(s) { return encodeURIComponent(s == null ? '' : s); }
+  function z(x) { x = +x; return (x < 10 ? '0' : '') + x; }
+  function mmss(x) { x = Math.max(0, Math.floor(x || 0)); var h = Math.floor(x / 3600), m = Math.floor(x / 60) % 60, s = x % 60;
+                     return (h ? h + ':' + z(m) : m) + ':' + z(s); }
+
+  // une erreur JS ne doit jamais figer l'interface
+  window.onerror = function (m, f, l) { try { dbgEl.textContent = 'ERR ' + m + ' @' + l; } catch (x) {} return true; };
+
+  /* =========================== reglages =========================== */
+  var DEF = { theme: 'light', clicker: '1', backlight: '30', hidden: '', kiosk: '0', diag: '0',
+              brick: '0', alarmOn: '0', alarmH: '7', alarmM: '0' };
+  var P = {}, k;
+  for (k in DEF) P[k] = DEF[k];
+
+  function applyPrefs() {
+    document.body.className = P.theme === 'dark' ? 'dark' : '';
+    dbgEl.style.display = P.diag === '1' ? 'block' : 'none';
+    send('idle?off=' + (P.backlight === '0' ? 1 : 0));
+  }
+  function setPref(key, v) { P[key] = String(v); send('setpref?k=' + enc(key) + '&v=' + enc(P[key])); applyPrefs(); }
+
+  /* =========================== pont natif =========================== */
+  // Les commandes vont dans une file ; une seule iframe (reutilisee) previent le natif,
+  // qui vide la file d'un coup avec window.__drain().
+  var queue = [], flushPending = false, frame = null, fseq = 0, lastClick = 0;
+  window.__drain = function () { var s = queue.join('\n'); queue = []; return s; };
+  function flush() {
+    flushPending = false;
+    if (!queue.length) return;
+    if (!frame) { frame = document.createElement('iframe'); frame.style.display = 'none'; document.body.appendChild(frame); }
+    frame.src = 'ipod://flush/' + (++fseq);
+  }
+  function send(cmd) { queue.push(cmd); if (!flushPending) { flushPending = true; setTimeout(flush, 0); } }
+  setInterval(function () { if (queue.length && !flushPending) flush(); }, 500);   // filet de securite
+  function click() {
+    if (P.clicker !== '1') return;
+    var t = now(); if (t - lastClick < 40) return;
+    lastClick = t; send('click');
+  }
+
+  /* =========================== etat =========================== */
+  var np = { t: '', a: '', al: '', pos: 0, dur: 0, st: 0, vol: 0.5, idx: 0, cnt: 0, sh: 'off', rp: 'off', art: '', at: now() };
+  var radio = { st: 0, n: '', i: -1 };
+  var bri = 0.5, hold = false, holdKnown = false, holdMs = -1, rid = 0, stats = null, sleepEnd = 0, sleepMin = 0;
+
+  function curPos() { var p = np.st === 1 ? np.pos + (now() - np.at) / 1000 : np.pos; return np.dur > 0 ? clamp(p, 0, np.dur) : Math.max(0, p); }
+  function radioOn() { return radio.st === 1 || radio.st === 2; }
+
+  // Webradios (HTTP simple : iOS 6 gere mal le HTTPS recent). Pour en ajouter : copie une ligne.
+  var RADIOS = [
+    ['France Inter',   'http://icecast.radiofrance.fr/franceinter-midfi.mp3'],
+    ['franceinfo',     'http://icecast.radiofrance.fr/franceinfo-midfi.mp3'],
+    ['France Culture', 'http://icecast.radiofrance.fr/franceculture-midfi.mp3'],
+    ['France Musique', 'http://icecast.radiofrance.fr/francemusique-midfi.mp3'],
+    ['FIP',            'http://icecast.radiofrance.fr/fip-midfi.mp3'],
+    ['Mouv’',     'http://icecast.radiofrance.fr/mouv-midfi.mp3']
+  ];
+
+  /* =========================== menus =========================== */
+  var SH = [['off', 'Non'], ['songs', 'Morceaux'], ['albums', 'Albums']];
+  var RP = [['off', 'Non'], ['one', 'Un'], ['all', 'Tout']];
+  var BL = [['10', '10 secondes'], ['30', '30 secondes'], ['60', '1 minute'], ['120', '2 minutes'], ['0', 'Toujours allumé']];
+  var BL_SHORT = { '10': '10 s', '30': '30 s', '60': '1 min', '120': '2 min', '0': 'Toujours' };
+  var TH = [['light', 'Clair'], ['dark', 'Sombre']];
+  var SLEEP = [0, 15, 30, 60, 90, 120];
+
+  function label(list, v) { for (var i = 0; i < list.length; i++) if (list[i][0] === v) return list[i][1]; return ''; }
+  function yesNo(key) { return function () { return P[key] === '1' ? 'Oui' : 'Non'; }; }
+
+  // sous-menu de choix pour un reglage (coche sur la valeur courante)
+  function prefChoices(key, list, after) {
+    return function () {
+      return list.map(function (o) {
+        return { t: o[1], act: { type: 'pref', k: key, v: o[0], after: after }, check: function () { return P[key] === o[0]; } };
+      });
+    };
+  }
+  function modeChoices(key, list) {
+    return function () {
+      return list.map(function (o) {
+        return { t: o[1], act: { type: 'mode', k: key, v: o[0] }, check: function () { return np[key] === o[0]; } };
+      });
+    };
+  }
+
+  var ROOT_DEF = [
+    ['music', 'Musique', { type: 'menu', items: musicMenu }],
+    ['videos', 'Vidéos', { type: 'src', src: 'videos' }],
+    ['podcasts', 'Podcasts', { type: 'src', src: 'podcasts' }],
+    ['radio', 'Radio', { type: 'menu', items: radioMenu }],
+    ['extras', 'Extras', { type: 'menu', items: extrasMenu }],
+    ['settings', 'Réglages', { type: 'menu', items: settingsMenu }],
+    ['shuffle', 'Lecture aléatoire', { type: 'shuffle', src: 'songs' }],
+    ['np', 'Lecture en cours', { type: 'np' }]
+  ];
+  function isHidden(key) { return (',' + P.hidden + ',').indexOf(',' + key + ',') >= 0; }
+  function rootMenu() {
+    var out = [];
+    ROOT_DEF.forEach(function (r) {
+      if (r[0] !== 'settings' && isHidden(r[0])) return;
+      if (r[0] === 'np' && !np.t && !radioOn()) return;          // comme sur l'iPod : seulement s'il y a une lecture
+      out.push({ t: r[1], act: r[2] });
+    });
+    return out;
+  }
+  function musicMenu() {
+    return [
+      { t: 'Playlists',  act: { type: 'src', src: 'playlists' } },
+      { t: 'Artistes',   act: { type: 'src', src: 'artists' } },
+      { t: 'Albums',     act: { type: 'src', src: 'albums' } },
+      { t: 'Morceaux',   act: { type: 'src', src: 'songs' } },
+      { t: 'Genres',     act: { type: 'src', src: 'genres' } },
+      { t: 'Compilations', act: { type: 'src', src: 'compilations' } },
+      { t: 'Compositeurs', act: { type: 'src', src: 'composers' } },
+      { t: 'Livres audio', act: { type: 'src', src: 'audiobooks' } },
+      { t: 'Top 25',     act: { type: 'src', src: 'top' } },
+      { t: 'Écoutés récemment', act: { type: 'src', src: 'recent' } }
+    ];
+  }
+  function radioMenu() {
+    return RADIOS.map(function (r, i) {
+      return { t: r[0], act: { type: 'radio', i: i }, val: function () { return (radio.i === i && radioOn()) ? '♪' : ''; } };
+    });
+  }
+  function sleepLabel() {
+    if (!sleepEnd || now() > sleepEnd) return 'Non';
+    return Math.ceil((sleepEnd - now()) / 60000) + ' min';
+  }
+  function sleepMenu() {
+    return SLEEP.map(function (m) {
+      return { t: m ? m + ' minutes' : 'Non', act: { type: 'sleep', m: m },
+               check: function () { return m ? (sleepEnd > now() && sleepMin === m) : !(sleepEnd > now()); } };
+    });
+  }
+  function alarmMenu() {
+    return [
+      { t: 'Réveil', val: yesNo('alarmOn'), act: { type: 'toggle', k: 'alarmOn', after: function (on) {
+          toast(on ? 'Réveil activé à ' + z(P.alarmH) + ':' + z(P.alarmM) : 'Réveil désactivé'); } } },
+      { t: 'Heure', val: function () { return z(P.alarmH) + ':' + z(P.alarmM); }, act: { type: 'screen', screen: 'time', title: 'Heure du réveil' } },
+      { t: 'Tester le réveil', act: { type: 'fn', fn: function () { send('alarmtest'); } } }
+    ];
+  }
+  function extrasMenu() {
+    return [
+      { t: 'Horloge', act: { type: 'screen', screen: 'clock', title: 'Horloge' } },
+      { t: 'Réveil', val: function () { return P.alarmOn === '1' ? z(P.alarmH) + ':' + z(P.alarmM) : 'Non'; }, act: { type: 'menu', items: alarmMenu } },
+      { t: 'Chronomètre', act: { type: 'screen', screen: 'sw', title: 'Chronomètre' } },
+      { t: 'Minuterie de veille', val: sleepLabel, act: { type: 'menu', items: sleepMenu } },
+      { t: 'Jeux', act: { type: 'menu', items: function () {
+          return [{ t: 'Brick', val: function () { return P.brick !== '0' ? '★ ' + P.brick : ''; }, act: { type: 'screen', screen: 'brick', title: 'Brick' } }];
+        } } }
+    ];
+  }
+  function mainMenuItems() {
+    return ROOT_DEF.filter(function (r) { return r[0] !== 'settings'; }).map(function (r) {
+      return { t: r[1], val: function () { return isHidden(r[0]) ? 'Non' : 'Oui'; }, act: { type: 'fn', fn: function () {
+        var l = P.hidden ? P.hidden.split(',') : [], i = l.indexOf(r[0]);
+        if (i >= 0) l.splice(i, 1); else l.push(r[0]);
+        setPref('hidden', l.join(','));
+        draw();
+      } } };
+    });
+  }
+  function settingsMenu() {
+    return [
+      { t: 'À propos', act: { type: 'screen', screen: 'about', title: 'À propos' } },
+      { t: 'Aléatoire', val: function () { return label(SH, np.sh); }, act: { type: 'menu', items: modeChoices('sh', SH) } },
+      { t: 'Répéter', val: function () { return label(RP, np.rp); }, act: { type: 'menu', items: modeChoices('rp', RP) } },
+      { t: 'Rétroéclairage', val: function () { return BL_SHORT[P.backlight] || ''; }, act: { type: 'menu', items: prefChoices('backlight', BL) } },
+      { t: 'Luminosité', val: function () { return Math.round(bri * 100) + ' %'; }, act: { type: 'screen', screen: 'bright', title: 'Luminosité' } },
+      { t: 'Minuterie de veille', val: sleepLabel, act: { type: 'menu', items: sleepMenu } },
+      { t: 'Clicker', val: yesNo('clicker'), act: { type: 'toggle', k: 'clicker' } },
+      { t: 'Thème', val: function () { return label(TH, P.theme); }, act: { type: 'menu', items: prefChoices('theme', TH) } },
+      { t: 'Menu principal', act: { type: 'menu', items: mainMenuItems } },
+      { t: 'Écran d’accueil', val: yesNo('kiosk'), act: { type: 'toggle', k: 'kiosk', after: function (on) {
+          toast(on ? 'L’iPod remplace l’écran d’accueil.\nQuitter : Home + Vol+ + Vol−' : 'Écran d’accueil normal rétabli', 3500); } } },
+      { t: 'Diagnostic', val: yesNo('diag'), act: { type: 'toggle', k: 'diag' } },
+      { t: 'Réinitialiser', act: { type: 'menu', items: function () {
+          return [{ t: 'Annuler', act: { type: 'fn', fn: back } },
+                  { t: 'Réinitialiser les réglages', act: { type: 'fn', fn: resetPrefs } }];
+        } } }
+    ];
+  }
+  function resetPrefs() {
+    for (var key in DEF) setPref(key, DEF[key]);
+    setSleep(0, true);
+    home();
+    toast('Réglages réinitialisés');
+  }
+
+  /* =========================== ecrans =========================== */
+  var stack = [], S = {}, tick = null, view = '', rows = [];
+  function cur() { return stack[stack.length - 1]; }
+  function setTick(fn, ms) { clearInterval(tick); tick = fn ? setInterval(fn, ms) : null; }
+  function leaveTop() { var c = cur(); if (c && S[c.type].leave) S[c.type].leave(c); }
+  function push(s) { leaveTop(); stack.push(s); show(); }
+  function back() { if (stack.length <= 1) return; leaveTop(); stack.pop(); show(); }
+  function home() { if (stack.length <= 1) return; leaveTop(); stack.length = 1; show(); }
+  function show() {
+    var s = cur(), h = S[s.type];
+    setTick(null);
+    titleEl.textContent = s.title || '';
+    if (h.enter) h.enter(s);
+    draw();
+  }
+  function draw() { var s = cur(); S[s.type].draw(s); }
+
+  // vues : 'rows' (7 lignes reutilisees) ou 'html' (ecran libre)
+  function useRows() {
+    if (view === 'rows') return;
+    view = 'rows'; listEl.innerHTML = ''; rows = [];
+    for (var i = 0; i < VISIBLE; i++) {
+      var d = document.createElement('div'), a = document.createElement('span'), t = document.createElement('span'), b = document.createElement('span');
+      d.className = 'row'; a.className = 'arr'; b.className = 'sub';
+      d.appendChild(a); d.appendChild(t); d.appendChild(b); listEl.appendChild(d);
+      rows.push({ el: d, arr: a, tx: t, sub: b, k: null });
+    }
+  }
+  function useHtml(html) { view = 'html:' + now(); listEl.innerHTML = html; }
+
+  function hasChildren(a) { return a && (a.type === 'menu' || a.type === 'src'); }
+
+  S.list = {
+    enter: function (s) {
+      if (s.build) { s.items = s.build(); s.sel = clamp(s.sel, 0, Math.max(0, s.items.length - 1)); }
+    },
+    draw: function (s) {
+      if (s.loading) { useHtml('<div class="txt">Chargement…</div>'); return; }
+      if (!s.items.length) { useHtml('<div class="txt">' + esc(s.empty || 'Aucun élément').replace(/\n/g, '<br>') + '</div>'); return; }
+      useRows();
+      if (s.sel < s.off) s.off = s.sel;
+      if (s.sel >= s.off + VISIBLE) s.off = s.sel - VISIBLE + 1;
+      s.off = clamp(s.off, 0, Math.max(0, s.items.length - VISIBLE));
+      for (var r = 0; r < VISIBLE; r++) {
+        var i = s.off + r, R = rows[r], it = s.items[i];
+        if (!it) { if (R.k !== '') { R.el.style.visibility = 'hidden'; R.k = ''; } continue; }
+        var mark = it.val ? it.val() : (it.check ? (it.check() ? '✓' : '') : (hasChildren(it.act) ? '▶' : ''));
+        var sub = it.s || '', sel = (i === s.sel);
+        var key = it.t + '\u0001' + sub + '\u0001' + mark + '\u0001' + sel;
+        if (R.k === key) continue;                       // rien n'a change : on ne touche pas au DOM
+        R.k = key;
+        R.el.style.visibility = 'visible';
+        R.el.className = sel ? 'row sel' : 'row';
+        R.arr.textContent = mark; R.tx.textContent = it.t; R.sub.textContent = sub;
+      }
+    },
+    step: function (s, dir, mult) {
+      if (s.loading || !s.items.length) return;
+      if (s.items.length < 40) mult = 1;
+      var n = clamp(s.sel + dir * mult, 0, s.items.length - 1);
+      if (n === s.sel) return;
+      s.sel = n; this.draw(s); click();
+      if (mult > 1) showLetter(s.items[n].t);
+    },
+    center: function (s) { var it = s.items[s.sel]; if (it && it.act) act(it.act, it); },
+    hold: function (s) {   // maintenir le centre sur un morceau = ajouter a On-The-Go
+      var it = s.items[s.sel];
+      if (it && it.act && it.act.type === 'play') send('otgadd?src=' + enc(it.act.src) + '&id=' + enc(it.act.id || '') + '&i=' + it.act.i);
+    }
+  };
+
+  function act(a, it) {
+    var name = it ? it.t : '';
+    switch (a.type) {
+      case 'menu': push({ type: 'list', title: name, items: [], sel: 0, off: 0, build: a.items }); break;
+      case 'src':
+        var s = { type: 'list', title: name, items: [], sel: 0, off: 0, loading: true, src: a.src, pid: a.id || '', rid: ++rid,
+                  empty: a.src === 'otg' ? 'Liste vide.\nMaintiens le bouton central\nsur un morceau pour l’ajouter.' : '' };
+        push(s);
+        send('list?src=' + enc(a.src) + '&id=' + enc(a.id || '') + '&rid=' + s.rid);
+        break;
+      case 'play':    send('play?src=' + enc(a.src) + '&id=' + enc(a.id || '') + '&i=' + a.i); optimisticPlay(it); goNP(); break;
+      case 'shuffle': send('shuffle?src=' + enc(a.src || 'songs') + '&id=' + enc(a.id || '')); optimisticPlay(null); goNP(); break;
+      case 'video':   send('video?i=' + a.i); break;
+      case 'np':      goNP(); break;
+      case 'radio':   startRadio(a.i); break;
+      case 'screen':  push({ type: a.screen, title: a.title || name }); break;
+      case 'pref':    setPref(a.k, a.v); if (a.after) a.after(); back(); break;
+      case 'toggle':  setPref(a.k, P[a.k] === '1' ? '0' : '1'); if (a.after) a.after(P[a.k] === '1'); draw(); break;
+      case 'mode':    send('mode?' + a.k + '=' + a.v); np[a.k] = a.v; back(); break;
+      case 'sleep':   setSleep(a.m); back(); break;
+      case 'fn':      a.fn(); break;
+    }
+  }
+  function optimisticPlay(it) {
+    radio.st = 0;
+    if (it) { np.t = it.t; np.a = it.s || ''; np.pos = 0; np.at = now(); }
+    np.st = 1; updBar();
+  }
+  function goNP() {
+    if (radioOn()) { if (cur().type !== 'radio') push({ type: 'radio', title: radio.n }); return; }
+    if (cur().type !== 'np') push({ type: 'np', title: 'Lecture en cours' });
+  }
+
+  /* ---------- lecture en cours ---------- */
+  var MODES = ['vol', 'scrub', 'sh', 'rp'];
+  S.np = {
+    enter: function (s) {
+      s.mode = 'vol'; s.mt = 0; s.n = 0; s.artKey = null;
+      send('np?art=1');
+      setTick(function () {
+        if (s.mode !== 'vol' && now() - s.mt > 6000) s.mode = 'vol';   // retour au volume apres 6 s
+        S.np.upd(s);
+        if (++s.n % 5 === 0) send('np');                               // resynchro douce
+      }, 1000);
+    },
+    draw: function (s) {
+      useHtml('<div class="np"><div class="art"><span>♫</span><img id="artimg"></div>' +
+        '<div class="info"><div class="npt" id="npt"></div><div class="npa" id="npa"></div><div class="npa" id="npal"></div><div class="npi" id="npi"></div></div>' +
+        '<div class="bot"><div class="prog" id="pbar"><div id="ppos"></div></div><div class="tm"><span id="tl"></span><span id="tr"></span></div>' +
+        '<div class="md"><span class="ml" id="ml"></span><div class="prog" id="mbar"><div id="mpos"></div></div><span class="mv" id="mv"></span></div></div></div>');
+      s.e = { img: $('artimg'), t: $('npt'), a: $('npa'), al: $('npal'), i: $('npi'), pbar: $('pbar'), ppos: $('ppos'),
+              tl: $('tl'), tr: $('tr'), ml: $('ml'), mbar: $('mbar'), mpos: $('mpos'), mv: $('mv') };
+      s.artKey = null;
+      this.upd(s);
+    },
+    upd: function (s) {
+      var e = s.e; if (!e) return;
+      e.t.textContent = np.t || 'Aucune lecture';
+      e.a.textContent = np.a || ''; e.al.textContent = np.al || '';
+      e.i.textContent = (np.idx && np.cnt) ? np.idx + ' sur ' + np.cnt : '';
+      if (s.artKey !== np.art) {
+        s.artKey = np.art;
+        if (np.art) { e.img.src = 'data:image/jpeg;base64,' + np.art; e.img.style.display = 'block'; }
+        else { e.img.removeAttribute('src'); e.img.style.display = 'none'; }
+      }
+      var p = curPos();
+      e.ppos.style.width = (np.dur > 0 ? clamp(p / np.dur * 100, 0, 100) : 0) + '%';
+      e.pbar.className = s.mode === 'scrub' ? 'prog scrub' : 'prog';
+      e.tl.textContent = mmss(p); e.tr.textContent = '-' + mmss(np.dur - p);
+      var lab = { vol: 'Volume', scrub: 'Défilement', sh: 'Aléatoire', rp: 'Répéter' }[s.mode];
+      e.ml.textContent = lab;
+      e.mbar.style.display = s.mode === 'vol' ? 'inline-block' : 'none';
+      e.mpos.style.width = Math.round(np.vol * 100) + '%';
+      e.mv.textContent = s.mode === 'sh' ? label(SH, np.sh) : s.mode === 'rp' ? label(RP, np.rp) : s.mode === 'scrub' ? '◀ molette ▶' : '';
+    },
+    step: function (s, dir, mult) {
+      s.mt = now();
+      if (s.mode === 'vol') {
+        np.vol = clamp(Math.round((np.vol + dir * Math.min(mult, 2) / 16) * 16) / 16, 0, 1);
+        send('vol?v=' + np.vol.toFixed(3)); click();
+      } else if (s.mode === 'scrub') {
+        if (!np.dur) return;
+        np.pos = clamp(curPos() + dir * Math.min(mult, 4) * 3, 0, np.dur); np.at = now();
+        clearTimeout(s.seekT);
+        s.seekT = setTimeout(function () { send('seek?t=' + np.pos.toFixed(1)); }, 150);
+        click();
+      } else {
+        var list = s.mode === 'sh' ? SH : RP, cur0 = np[s.mode], i = 0;
+        for (var j = 0; j < list.length; j++) if (list[j][0] === cur0) i = j;
+        np[s.mode] = list[(i + dir + list.length) % list.length][0];
+        send('mode?' + s.mode + '=' + np[s.mode]); click();
+      }
+      this.upd(s);
+    },
+    center: function (s) {   // comme sur l'iPod classic : le centre fait defiler les modes
+      s.mode = MODES[(MODES.indexOf(s.mode) + 1) % MODES.length]; s.mt = now(); this.upd(s);
+    }
+  };
+
+  /* ---------- radio ---------- */
+  function startRadio(i) {
+    radio = { st: 1, n: RADIOS[i][0], i: i };
+    np.st = 0;
+    send('radio?n=' + enc(RADIOS[i][0]) + '&u=' + enc(RADIOS[i][1]));
+    if (cur().type === 'radio') { cur().title = radio.n; titleEl.textContent = radio.n; draw(); }
+    else push({ type: 'radio', title: radio.n });
+    updBar();
+  }
+  S.radio = {
+    enter: function (s) { send('radiost'); setTick(function () { send('radiost'); }, 1000); },
+    draw: function (s) {
+      useHtml('<div class="np"><div class="art"><span>\uD83D\uDCFB</span></div>' +
+        '<div class="info"><div class="npt" id="npt"></div><div class="npa">Webradio</div><div class="npi" id="npi"></div><div class="rst" id="rst"></div></div>' +
+        '<div class="bot"><div class="md"><span class="ml">Volume</span><div class="prog"><div id="mpos"></div></div></div>' +
+        '<div class="md">◀◀ ▶▶ : station précédente / suivante</div></div></div>');
+      s.e = { t: $('npt'), i: $('npi'), st: $('rst'), mpos: $('mpos') };
+      this.upd(s);
+    },
+    upd: function (s) {
+      var e = s.e; if (!e) return;
+      e.t.textContent = radio.n;
+      e.i.textContent = radio.i >= 0 ? (radio.i + 1) + ' sur ' + RADIOS.length : '';
+      e.st.innerHTML = ['❚❚ Arrêtée', 'Connexion…', '▶ En direct', 'Flux indisponible.<br>Vérifie le Wi-Fi.'][radio.st] || '';
+      e.st.className = radio.st === 3 ? 'rst err' : 'rst';
+      e.mpos.style.width = Math.round(np.vol * 100) + '%';
+    },
+    step: function (s, dir, mult) {
+      np.vol = clamp(Math.round((np.vol + dir * Math.min(mult, 2) / 16) * 16) / 16, 0, 1);
+      send('vol?v=' + np.vol.toFixed(3)); click(); this.upd(s);
+    },
+    center: function () { tPlay(); }
+  };
+
+  /* ---------- horloge ---------- */
+  var JOURS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+      MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  function clockHtml(extra) {
+    return '<div class="np"><div class="clk"><div class="big" id="ck"></div><div class="dt" id="cd"></div><div class="dt" id="ca"></div></div>' + (extra || '') + '</div>';
+  }
+  function clockUpd() {
+    var n = new Date(), ck = $('ck'); if (!ck) return;
+    ck.textContent = z(n.getHours()) + ':' + z(n.getMinutes()) + ':' + z(n.getSeconds());
+    $('cd').textContent = JOURS[n.getDay()] + ' ' + n.getDate() + ' ' + MOIS[n.getMonth()];
+  }
+  S.clock = {
+    enter: function () { setTick(clockUpd, 1000); },
+    draw: function () {
+      useHtml(clockHtml());
+      $('ca').textContent = P.alarmOn === '1' ? '⏰ ' + z(P.alarmH) + ':' + z(P.alarmM) : '';
+      clockUpd();
+    }
+  };
+  S.alarm = {
+    enter: function () { setTick(clockUpd, 1000); },
+    draw: function () { useHtml(clockHtml('<div class="hint">Appuie au centre pour arrêter</div>')); $('ca').textContent = '⏰ Réveil'; clockUpd(); },
+    center: function () { send('pause'); np.st = 0; updBar(); back(); },
+    menu: function () { send('pause'); np.st = 0; updBar(); back(); }
+  };
+
+  /* ---------- reglage de l'heure du reveil ---------- */
+  S.time = {
+    enter: function (s) { s.h = +P.alarmH; s.m = +P.alarmM; s.f = 0; },
+    draw: function (s) {
+      useHtml('<div class="te"><span id="th"></span>:<span id="tmn"></span><div class="hint">Molette : régler · Centre : suivant / valider</div></div>');
+      this.upd(s);
+    },
+    upd: function (s) {
+      var h = $('th'), m = $('tmn');
+      h.textContent = z(s.h); m.textContent = z(s.m);
+      h.className = s.f === 0 ? 'on' : ''; m.className = s.f === 1 ? 'on' : '';
+    },
+    step: function (s, dir, mult) {
+      if (s.f === 0) s.h = (s.h + dir + 24) % 24;
+      else s.m = (s.m + dir * Math.min(mult, 5) + 600) % 60;
+      click(); this.upd(s);
+    },
+    center: function (s) {
+      if (s.f === 0) { s.f = 1; this.upd(s); return; }
+      setPref('alarmH', s.h); setPref('alarmM', s.m); setPref('alarmOn', '1');
+      toast('Réveil réglé sur ' + z(s.h) + ':' + z(s.m));
+      back();
+    }
+  };
+
+  /* ---------- chronometre ---------- */
+  var sw = { run: false, t0: 0, acc: 0, laps: [] };
+  function swNow() { return sw.acc + (sw.run ? now() - sw.t0 : 0); }
+  function swFmt(ms) {
+    var cs = Math.floor(ms / 10) % 100, s = Math.floor(ms / 1000), h = Math.floor(s / 3600);
+    return (h ? h + ':' : '') + z(Math.floor(s / 60) % 60) + ':' + z(s % 60) + ',' + z(cs);
+  }
+  S.sw = {
+    enter: function () { setTick(function () { if (sw.run) { var b = $('swb'); if (b) b.textContent = swFmt(swNow()); } }, 53); },
+    draw: function () {
+      var l = '';
+      for (var i = sw.laps.length - 1, n = 0; i >= 0 && n < 4; i--, n++) l += '<div>Tour ' + (i + 1) + '<b>' + swFmt(sw.laps[i]) + '</b></div>';
+      useHtml('<div class="sw"><div class="big" id="swb">' + swFmt(swNow()) + '</div><div class="laps">' + l + '</div>' +
+              '<div class="hint">Centre : ' + (sw.run ? 'arrêt' : 'départ') + ' · ▶▶ : ' + (sw.run ? 'tour' : 'remise à zéro') + '</div></div>');
+    },
+    center: function () {
+      if (sw.run) { sw.acc += now() - sw.t0; sw.run = false; } else { sw.t0 = now(); sw.run = true; }
+      draw();
+    },
+    next: function () {
+      if (sw.run) sw.laps.push(swNow()); else { sw.acc = 0; sw.laps = []; }
+      click(); draw();
+    }
+  };
+
+  /* ---------- luminosite ---------- */
+  S.bright = {
+    enter: function () { send('bright?q=1'); },
+    draw: function () {
+      useHtml('<div class="np"><div class="clk"><div class="big" style="font-size:40px">☀︎</div>' +
+              '<div class="prog" style="margin:18px 30px 6px"><div id="bpos"></div></div><div class="dt" id="bpct"></div></div></div>');
+      this.upd();
+    },
+    upd: function () { var b = $('bpos'); if (!b) return; b.style.width = Math.round(bri * 100) + '%'; $('bpct').textContent = Math.round(bri * 100) + ' %'; },
+    step: function (s, dir, mult) {
+      bri = clamp(Math.round((bri + dir * 0.05 * Math.min(mult, 2)) * 100) / 100, 0.05, 1);
+      send('bright?v=' + bri.toFixed(2)); click(); this.upd();
+    }
+  };
+
+  /* ---------- a propos ---------- */
+  function gb(b) { return b > 0 ? (b / 1073741824).toFixed(1).replace('.', ',') + ' Go' : '–'; }
+  S.about = {
+    enter: function () { send('stats'); },
+    draw: function () {
+      var st = stats || {};
+      function kv(a, b) { return '<div class="kv">' + a + '<b>' + esc(b) + '</b></div>'; }
+      useHtml('<div class="ab"><div class="h">iPod</div>' +
+        kv('Morceaux', st.songs == null ? '…' : st.songs) + kv('Albums', st.albums == null ? '…' : st.albums) +
+        kv('Artistes', st.artists == null ? '…' : st.artists) + kv('Vidéos', st.videos == null ? '…' : st.videos) +
+        kv('Capacité', gb(st.cap)) + kv('Disponible', gb(st.free)) +
+        kv('Version', 'IPodWheel ' + VERSION) + kv('Appareil', 'iPhone 4 · iOS 6') + '</div>');
+    }
+  };
+
+  /* ---------- jeu : Brick ---------- */
+  var G = null;
+  var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame || function (f) { return setTimeout(function () { f(now()); }, 16); };
+  var caf = window.cancelAnimationFrame || window.webkitCancelAnimationFrame || clearTimeout;
+  var BRICK_COLORS = ['#e53935', '#fb8c00', '#fdd835', '#43a047', '#1e88e5'];
+  function newGame() {
+    var g = { score: 0, lives: 3, level: 1, px: 140, pw: 50, stuck: true, paused: false, over: false, raf: null, last: 0 };
+    resetBricks(g); resetBall(g); return g;
+  }
+  function resetBricks(g) { g.bricks = []; for (var r = 0; r < 5; r++) for (var c = 0; c < 8; c++) g.bricks.push({ x: c * 35 + 1, y: 24 + r * 13, c: r, on: true }); }
+  function resetBall(g) { g.stuck = true; g.speed = 150 + (g.level - 1) * 22; g.bx = g.px; g.by = 202; g.vx = 0; g.vy = 0; }
+  function gameRunning() { return G && !G.stuck && !G.paused && !G.over; }
+  function gameLoop(t) {
+    if (!G || !gameRunning()) { G && (G.raf = null); return; }
+    var dt = Math.min(0.05, (t - G.last) / 1000 || 0.016); G.last = t;
+    var g = G;
+    g.bx += g.vx * dt; g.by += g.vy * dt;
+    if (g.bx < 4) { g.bx = 4; g.vx = Math.abs(g.vx); }
+    if (g.bx > 276) { g.bx = 276; g.vx = -Math.abs(g.vx); }
+    if (g.by < 20) { g.by = 20; g.vy = Math.abs(g.vy); }
+    // raquette
+    if (g.vy > 0 && g.by >= 202 && g.by <= 212 && Math.abs(g.bx - g.px) <= g.pw / 2 + 4) {
+      var off = clamp((g.bx - g.px) / (g.pw / 2), -1, 1), ang = off * 1.05;
+      g.vx = g.speed * Math.sin(ang); g.vy = -g.speed * Math.cos(ang); g.by = 201;
+    }
+    // briques
+    for (var i = 0; i < g.bricks.length; i++) {
+      var b = g.bricks[i];
+      if (!b.on || g.bx < b.x - 4 || g.bx > b.x + 37 || g.by < b.y - 4 || g.by > b.y + 15) continue;
+      b.on = false; g.score += (5 - b.c) * 10;
+      var dx = Math.min(Math.abs(g.bx - b.x), Math.abs(g.bx - (b.x + 33))), dy = Math.min(Math.abs(g.by - b.y), Math.abs(g.by - (b.y + 11)));
+      if (dx < dy) g.vx = -g.vx; else g.vy = -g.vy;
+      break;
+    }
+    var left = 0; for (i = 0; i < g.bricks.length; i++) if (g.bricks[i].on) left++;
+    if (!left) { g.level++; resetBricks(g); resetBall(g); }
+    if (g.by > 228) {
+      g.lives--;
+      if (g.lives <= 0) { g.over = true; if (g.score > +P.brick) setPref('brick', g.score); }
+      else resetBall(g);
+    }
+    gameDraw();
+    if (gameRunning()) g.raf = raf(gameLoop); else g.raf = null;
+  }
+  function gameStart() { if (G.raf || !gameRunning()) return; G.last = now(); G.raf = raf(function (t) { G.last = t; gameLoop(t); }); }
+  function gameDraw() {
+    var cv = $('cv'); if (!cv || !G) return;
+    var x = cv.getContext('2d'), dark = P.theme === 'dark', g = G;
+    x.fillStyle = dark ? '#000' : '#fff'; x.fillRect(0, 0, 280, 222);
+    for (var i = 0; i < g.bricks.length; i++) { var b = g.bricks[i]; if (!b.on) continue; x.fillStyle = BRICK_COLORS[b.c]; x.fillRect(b.x, b.y, 33, 11); }
+    x.fillStyle = dark ? '#ddd' : '#333'; x.fillRect(g.px - g.pw / 2, 208, g.pw, 6);
+    if (g.stuck) g.bx = g.px;
+    x.fillStyle = '#1b66cc'; x.beginPath(); x.arc(g.bx, g.by, 4, 0, 6.2832); x.fill();
+    x.fillStyle = dark ? '#aaa' : '#555'; x.font = '12px Helvetica'; x.textAlign = 'left';
+    x.fillText('Score ' + g.score + '   Niveau ' + g.level, 4, 14);
+    x.textAlign = 'right'; x.fillText(new Array(g.lives + 1).join('● '), 276, 14);
+    var msg = g.over ? 'Perdu ! Centre : rejouer' : g.paused ? 'Pause – Centre : reprendre' : g.stuck ? 'Centre : lancer la balle' : '';
+    if (msg) { x.textAlign = 'center'; x.font = 'bold 14px Helvetica'; x.fillStyle = dark ? '#fff' : '#111'; x.fillText(msg, 140, 150); }
+  }
+  S.brick = {
+    enter: function () { if (!G || G.over) G = newGame(); if (!G.stuck) G.paused = true; },
+    draw: function () { useHtml('<canvas id="cv" width="280" height="222"></canvas>'); gameDraw(); },
+    leave: function () { if (G) { if (!G.stuck && !G.over) G.paused = true; if (G.raf) { caf(G.raf); G.raf = null; } } },
+    step: function (s, dir, mult) { G.px = clamp(G.px + dir * 12 * Math.min(mult, 3), G.pw / 2, 280 - G.pw / 2); if (!gameRunning()) gameDraw(); },
+    center: function () {
+      if (G.over) { G = newGame(); gameDraw(); return; }
+      if (G.stuck) { G.stuck = false; G.paused = false; var a = (Math.random() - 0.5) * 0.8; G.vx = G.speed * Math.sin(a); G.vy = -G.speed * Math.cos(a); }
+      else G.paused = !G.paused;
+      gameDraw(); gameStart();
+    }
+  };
+
+  /* =========================== transport =========================== */
+  function updBar() {
+    var playing = radioOn() || np.st === 1;
+    pstEl.textContent = playing ? '▶' : (np.t ? '❚❚' : '');
+  }
+  function updAll() {
+    updBar();
+    var s = cur(); if (!s) return;
+    if (s.type === 'np' || s.type === 'radio') S[s.type].upd(s);
+    else if (s.type === 'list' && !s.loading) S.list.draw(s);
+  }
+  function tPlay() {
+    if (radioOn() || (radio.i >= 0 && cur().type === 'radio')) { send('radiotoggle'); radio.st = radioOn() ? 0 : 1; }
+    else { send('playpause'); np.pos = curPos(); np.at = now(); np.st = np.st === 1 ? 0 : 1; }
+    updAll();
+  }
+  function tNext() { if (radioOn()) startRadio((radio.i + 1) % RADIOS.length); else send('next'); }
+  function tPrev() {
+    if (radioOn()) { startRadio((radio.i - 1 + RADIOS.length) % RADIOS.length); return; }
+    if (curPos() > 3) { send('seek?t=0'); np.pos = 0; np.at = now(); updAll(); }   // comme l'iPod : debut du morceau
+    else send('prev');
+  }
+
+  /* =========================== minuterie / veille / retroeclairage =========================== */
+  function setSleep(m, quiet) {
+    sleepMin = m; sleepEnd = m ? now() + m * 60000 : 0;
+    send('sleep?m=' + m);
+    if (!quiet) toast(m ? 'Arrêt de la lecture dans ' + m + ' min' : 'Minuterie désactivée');
+  }
+  var lastAct = now(), dimmed = false;
+  function dim(on) { if (dimmed === on) return; dimmed = on; dimEl.style.display = on ? 'block' : 'none'; send('dim?on=' + (on ? 1 : 0)); }
+  setInterval(function () {
+    var secs = +P.backlight;
+    if (secs > 0 && !dimmed && now() - lastAct > secs * 1000 && !gameRunning()) dim(true);
+  }, 1000);
+
+  /* =========================== surimpressions =========================== */
+  var letterT = null, toastT = null, ovTimer = null;
+  var ACC = 'ÀÁÂÄÃÅÇÈÉÊËÌÍÎÏÑÒÓÔÖÕÙÚÛÜÝ',
+      PLAIN = 'AAAAAACEEEEIIIINOOOOOUUUUY';
+  function showLetter(t) {
+    var c = String(t || '').charAt(0).toUpperCase(), j = ACC.indexOf(c);
+    if (j >= 0) c = PLAIN.charAt(j);
+    if (!/[A-Z]/.test(c)) c = '#';
+    letterEl.textContent = c; letterEl.style.display = 'block';
+    clearTimeout(letterT); letterT = setTimeout(function () { letterEl.style.display = 'none'; }, 700);
+  }
+  function toast(msg, ms) {
+    toastEl.innerHTML = esc(msg).replace(/\n/g, '<br>'); toastEl.style.display = 'block';
+    clearTimeout(toastT); toastT = setTimeout(function () { toastEl.style.display = 'none'; }, ms || 1800);
+  }
+  function flashLock(open) {
+    lockov.innerHTML = open ? '&#x1F513;' : '&#x1F512;';
+    lockov.style.display = 'block';
+    clearTimeout(ovTimer); ovTimer = setTimeout(function () { lockov.style.display = 'none'; }, 900);
+  }
+
+  /* =========================== appels du natif =========================== */
+  var NEXT = { artists: 'albums-artist', albums: 'songs-album', genres: 'songs-genre', playlists: 'songs-playlist',
+               compilations: 'songs-album', composers: 'songs-composer', 'albums-artist': 'songs-album' };
+  window.onList = function (o) {
+    var s = cur();
+    if (s.type !== 'list' || s.rid !== o.rid) return;
+    var out = [], src = o.src, items = o.items || [], i, r;
+    if (src === 'playlists') out.push({ t: 'On-The-Go', s: o.otg ? o.otg + ' morceau' + (o.otg > 1 ? 'x' : '') : '', act: { type: 'src', src: 'otg' } });
+    if (src === 'albums-artist') out.push({ t: 'Tous les morceaux', act: { type: 'src', src: 'songs-artist', id: s.pid } });
+    if (!NEXT[src] && src !== 'videos' && items.length > 1) out.push({ t: 'Lecture aléatoire', act: { type: 'shuffle', src: src, id: s.pid } });
+    for (i = 0; i < items.length; i++) {
+      r = items[i];
+      var a = NEXT[src] ? { type: 'src', src: NEXT[src], id: r[2] } : src === 'videos' ? { type: 'video', i: i } : { type: 'play', src: src, id: s.pid, i: i };
+      out.push({ t: r[0] || '', s: r[1] || '', act: a });
+    }
+    if (src === 'otg' && items.length) out.push({ t: 'Effacer la liste', act: { type: 'fn', fn: function () { send('otgclear'); back(); toast('On-The-Go effacée'); } } });
+    s.items = out; s.loading = false; s.sel = 0; s.off = 0;
+    if (src === 'otg' && !items.length) s.items = [];
+    draw();
+  };
+  window.onNP = function (o) {
+    var had = !!np.t;
+    for (var key in o) np[key] = o[key];
+    np.at = now();
+    if (o.st === 1 && radio.st) radio.st = 0;
+    var s = cur();
+    if (s && s.build === rootMenu && had !== !!np.t) S.list.enter(s);
+    updAll();
+  };
+  window.onRadio = function (o) { radio.st = o.st; if (o.n) radio.n = o.n; updAll(); };
+  window.onBright = function (o) { bri = o.v; if (cur().type === 'bright') S.bright.upd(); };
+  window.onStats = function (o) { stats = o; if (cur().type === 'about') draw(); };
+  window.onToast = function (o) { toast(o.m, o.ms); };
+  window.onAlarm = function () { lastAct = now(); dim(false); if (cur().type !== 'alarm') push({ type: 'alarm', title: 'Réveil' }); };
+  window.onSleepDone = function () { sleepEnd = 0; np.st = 0; radio.st = 0; updAll(); toast('Minuterie : lecture arrêtée'); dim(true); };
+  window.wake = function () { lastAct = now(); dim(false); };
+  window.loadPrefs = function (o) {
+    for (var key in DEF) if (o && o[key] != null) P[key] = String(o[key]);
+    applyPrefs();
+    var s = cur(); if (s && s.type === 'list') { if (s.build) S.list.enter(s); draw(); }
+  };
+  window.setTheme = function (v) { P.theme = v === 'dark' ? 'dark' : 'light'; applyPrefs(); };   // compatibilite
+
+  window.setBattery = function (p, st) {
+    var fill = $('battfill'), bolt = $('bolt'), pct = $('battpct');
+    var charging = (st === 2), full = (st === 3);
+    if (p < 0) { fill.style.width = '100%'; fill.className = ''; pct.textContent = ''; bolt.style.display = 'none'; return; }
+    fill.style.width = Math.max(4, p) + '%';
+    fill.className = (p <= 20 && !charging && !full) ? 'low' : (charging ? 'chg' : '');
+    pct.textContent = p + '%';
+    bolt.style.display = charging ? 'block' : 'none';
+  };
+
+  /* ---------- mode Hold (interrupteur silencieux) ---------- */
+  window.setHold = function (h, ms) {
+    holdMs = ms;
+    if (!HOLD_ENABLED) return;
+    var nh = !!h, changed = (nh !== hold);
+    hold = nh;
+    badge.style.display = hold ? 'block' : 'none';
+    if (hold) { T.on = false; clearTimeout(T.holdT); }
+    if (changed && (holdKnown || hold)) flashLock(!hold);
+    holdKnown = true;
+    dbg('');
+  };
+
+  function dbg(extra) {
+    if (P.diag !== '1') return;
+    dbgEl.textContent = 'H' + (hold ? 1 : 0) + ' ms' + holdMs + ' v' + T.vel.toFixed(2) + ' q' + queue.length + ' ' + extra;
+  }
+
+  /* =========================== molette =========================== */
+  var WC = { x: 160, y: 380 };
+  function measure() { var r = wheel.getBoundingClientRect(); WC.x = r.left + r.width / 2; WC.y = r.top + r.height / 2; }
+  measure(); window.addEventListener('resize', measure, false);
+  function polar(t) { var dx = t.clientX - WC.x, dy = t.clientY - WC.y; return { a: Math.atan2(dy, dx) * 57.29578, d: Math.sqrt(dx * dx + dy * dy) }; }
+
+  var STEP = 20, RING_MIN = 38, RING_MAX = 88, TAP_PX = 14;
+  var HOLD_MS = { center: 650, menu: 800, next: 500, prev: 500, play: 1500 };
+  var T = { on: false, zone: '', sx: 0, sy: 0, last: 0, acc: 0, lt: 0, vel: 0, scrolled: false, moved: false, inRing: false, holdT: null, held: false, seek: false };
+
+  function zoneOf(p) {
+    if (p.d < RING_MIN) return 'center';
+    var a = p.a;                                 // -90 haut, 0 droite, 90 bas, +-180 gauche
+    if (a > -135 && a <= -45) return 'menu';
+    if (a > -45 && a <= 45) return 'next';
+    if (a > 45 && a <= 135) return 'play';
+    return 'prev';
+  }
+  function onHold() {
+    if (!T.on || T.scrolled || T.moved) return;
+    T.held = true;
+    var s = cur(), h = S[s.type];
+    if (T.zone === 'center') { if (h.hold) { h.hold(s); click(); } }
+    else if (T.zone === 'menu') { home(); click(); }
+    else if (T.zone === 'next' || T.zone === 'prev') {
+      if (!radioOn() && np.t && !h.next) { T.seek = true; send(T.zone === 'next' ? 'seekfwd' : 'seekbwd'); }
+    } else if (T.zone === 'play') { send('pause'); np.st = 0; radio.st = 0; updAll(); dim(true); }   // maintenir = veille, comme l'iPod
+  }
+  function doStep(dir) {
+    T.scrolled = true; clearTimeout(T.holdT);
+    var mult = T.vel > 0.9 ? 8 : (T.vel > 0.5 ? 3 : 1);     // acceleration quand on tourne vite
+    var s = cur(), h = S[s.type];
+    if (h.step) h.step(s, dir, mult);
+  }
+  function press(zone) {
+    var s = cur(), h = S[s.type];
+    if (zone === 'center') { if (h.center) h.center(s); }
+    else if (zone === 'menu') { if (h.menu) h.menu(s); else back(); }
+    else if (zone === 'next') { if (h.next) h.next(s); else tNext(); }
+    else if (zone === 'prev') { if (h.prev) h.prev(s); else tPrev(); }
+    else if (zone === 'play') { if (h.play) h.play(s); else tPlay(); }
+  }
+
+  document.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    if (e.touches.length > 1) return;
+    var t = e.touches[0], p = polar(t);
+    lastAct = now();
+    if (dimmed) { dim(false); T.on = false; return; }         // le premier contact rallume seulement l'ecran
+    if (p.d > RING_MAX + 6) { T.on = false; return; }
+    if (hold) { T.on = false; flashLock(false); return; }    // verrouille : on ignore tout
+    T.on = true; T.zone = zoneOf(p); T.sx = t.clientX; T.sy = t.clientY;
+    T.last = p.a; T.acc = 0; T.lt = now(); T.vel = 0;
+    T.scrolled = false; T.moved = false; T.held = false; T.seek = false; T.inRing = p.d >= RING_MIN;
+    clearTimeout(T.holdT); T.holdT = setTimeout(onHold, HOLD_MS[T.zone]);
+  }, false);
+
+  document.addEventListener('touchmove', function (e) {
+    e.preventDefault();
+    if (!T.on || hold || T.seek) return;
+    var t = e.touches[0], q = polar(t), dx = t.clientX - T.sx, dy = t.clientY - T.sy;
+    if (!T.moved && dx * dx + dy * dy > TAP_PX * TAP_PX) { T.moved = true; if (!T.held) clearTimeout(T.holdT); }
+    lastAct = now();
+    if (q.d >= RING_MIN && q.d <= RING_MAX + 20) {          // seule la couronne fait defiler
+      if (T.inRing) {
+        var d = q.a - T.last, tn = now(), dt = Math.max(8, tn - T.lt);
+        if (d > 180) d -= 360;
+        if (d < -180) d += 360;
+        T.vel = T.vel * 0.6 + Math.abs(d) / dt * 0.4; T.lt = tn;
+        T.acc += d;
+        while (T.acc >= STEP)  { T.acc -= STEP; doStep(1); }
+        while (T.acc <= -STEP) { T.acc += STEP; doStep(-1); }
+      }
+      T.last = q.a; T.inRing = true;
+    } else {
+      T.inRing = false;
+    }
+    if (P.diag === '1') dbg('a' + Math.round(q.a));
+  }, false);
+
+  document.addEventListener('touchend', function (e) {
+    e.preventDefault();
+    clearTimeout(T.holdT);
+    if (!T.on) return;
+    T.on = false;
+    if (T.seek) { send('seekend'); return; }
+    if (T.held || hold || T.scrolled || T.moved) return;    // rotation ou appui long : pas un clic
+    click();
+    press(T.zone);
+  }, false);
+
+  document.addEventListener('touchcancel', function () { clearTimeout(T.holdT); if (T.seek) send('seekend'); T.on = false; }, false);
+
+  /* =========================== demarrage =========================== */
+  stack.push({ type: 'list', title: 'iPod', items: [], sel: 0, off: 0, build: rootMenu });
+  applyPrefs();
+  show();
+})();
+</script>
+</body>
+</html>
